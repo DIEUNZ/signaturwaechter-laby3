@@ -11,6 +11,7 @@ $libs = [ordered]@{
     'lib/lm_api_mc1.8.9.jar'   = 'https://dl.labymod.net/latest/api/files/lm_api_mc1.8.9.jar'
     'lib/launchwrapper-1.12.jar' = 'https://libraries.minecraft.net/net/minecraft/launchwrapper/1.12/launchwrapper-1.12.jar'
     'lib/asm-debug-all-5.0.3.jar' = 'https://repo1.maven.org/maven2/org/ow2/asm/asm-debug-all/5.0.3/asm-debug-all-5.0.3.jar'
+    'lib/lwjgl-2.9.4-nightly-20150209.jar' = 'https://libraries.minecraft.net/org/lwjgl/lwjgl/lwjgl/2.9.4-nightly-20150209/lwjgl-2.9.4-nightly-20150209.jar'
     'lib/junit-platform-console-standalone-1.11.4.jar' = 'https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.11.4/junit-platform-console-standalone-1.11.4.jar'
 }
 New-Item -ItemType Directory -Force lib | Out-Null
@@ -20,7 +21,7 @@ foreach ($entry in $libs.GetEnumerator()) {
         Invoke-WebRequest -Uri $entry.Value -OutFile $entry.Key -UseBasicParsing
     }
 }
-$compileCp = 'lib/lm_api_mc1.8.9.jar;lib/launchwrapper-1.12.jar;lib/asm-debug-all-5.0.3.jar'
+$compileCp = 'lib/lm_api_mc1.8.9.jar;lib/launchwrapper-1.12.jar;lib/asm-debug-all-5.0.3.jar;lib/lwjgl-2.9.4-nightly-20150209.jar'
 $junit = 'lib/junit-platform-console-standalone-1.11.4.jar'
 
 # Sauberer Neubau
