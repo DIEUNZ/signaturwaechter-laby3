@@ -3,11 +3,13 @@
 Nachbau des LabyMod-4-Addons [AH-Fake-Warner](https://github.com/DIEUNZ/signaturwaechter) für **LabyMod 3** (Minecraft 1.8.9).
 Warnt im GrieferGames-Auktionshaus vor gefälschten Signaturen und gefälschten „Iced Out“-Items. Arbeitet nur lokal, es wird nichts an Server oder Dritte gesendet.
 
-**Stand:** Etappe 4. Im Item-Tooltip erscheint eine rote Warnzeile bei gefälschter Signatur (Standard-Signierer `AbgegrieftHD`) und bei „Iced Out“-Items ohne Verzauberung; solche Items bekommen in Truhen und im Auktionshaus einen roten Rahmen.
+**Stand:** Etappe 5 (Erinnerung). Im Item-Tooltip erscheint eine rote Warnzeile bei gefälschter Signatur (Standard-Signierer `AbgegrieftHD`) und bei „Iced Out“-Items ohne Verzauberung; solche Items bekommen in Truhen und im Auktionshaus einen roten Rahmen.
 
-**Einstellungen** (LabyMod-Einstellungen → Addons → AH-Fake-Warner): an/aus, vertrauenswürdige Signierer (durch Komma getrennt, Standard `AbgegrieftHD`), Ähnlichkeits-Schwelle 0–4 (Standard 2), Iced-Out-Prüfung, roter Rahmen. Gespeichert in `LabyMod/addons-1.8/config/AH-Fake-Warner.json`.
+**Auktions-Erinnerung:** Über einer Auktion `R` drücken – das Addon erinnert (Chat, Popup, Ton) kurz vor Ablauf; nochmal `R` entfernt die Erinnerung. Der Tooltip schlägt das vor. `/aht` listet die Erinnerungen, `/aht clear` löscht sie (nur lokal, nichts geht an den Server).
 
-Tooltip und Slot-Rahmen werden per ASM-Transformer (`ItemStack.getTooltip`, `GuiContainer.drawSlot`) eingebaut, weil die LabyMod-3-API dafür keine Events hat.
+**Einstellungen** (LabyMod-Einstellungen → Addons → AH-Fake-Warner): an/aus, vertrauenswürdige Signierer (durch Komma getrennt, Standard `AbgegrieftHD`), Ähnlichkeits-Schwelle 0–4 (Standard 2), Iced-Out-Prüfung, roter Rahmen; Erinnerung an/aus, Taste, Minuten vor Ablauf (Standard 2), Vorschlag im Tooltip. Gespeichert in `LabyMod/addons-1.8/config/AH-Fake-Warner.json`.
+
+Tooltip, Slot-Rahmen und Timer-Taste werden per ASM-Transformer (`ItemStack.getTooltip`, `GuiContainer.drawSlot`, `GuiContainer.keyTyped`) eingebaut, weil die LabyMod-3-API dafür keine Events hat.
 
 ## Installation
 
