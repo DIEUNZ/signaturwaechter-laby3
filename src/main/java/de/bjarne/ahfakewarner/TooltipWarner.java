@@ -69,19 +69,17 @@ public final class TooltipWarner {
     if (signature.isPresent()) {
       DetectionResult result = this.detector.detect(signature.get().name());
       if (result.verdict().isWarning()) {
-        String text = result.verdict() == SignatureVerdict.FAKE
-            ? "FÄLSCHUNG - imitiert " + result.matchedName()
-            : "Mögliche Fälschung - ähnlich zu " + result.matchedName();
+        String text = Texts.get(result.verdict() == SignatureVerdict.FAKE
+            ? "warning.fake" : "warning.suspect", result.matchedName());
         findings.add(new Finding(text,
             itemName + '|' + signature.get().name() + '|' + signature.get().date(),
-            itemName + ": signiert von " + signature.get().name()));
+            Texts.get("warning.chat", itemName, signature.get().name())));
       }
     }
 
     if (this.icedOutCheck && IcedOutDetector.isFake(plain, hasEnchantments)) {
-      findings.add(new Finding("FÄLSCHUNG - Iced Out ohne Verzauberung",
-          "icedout|" + itemName,
-          itemName + ": Iced Out ohne Verzauberung, vermutlich gefälscht"));
+      findings.add(new Finding(Texts.get("warning.icedOut"), "icedout|" + itemName,
+          Texts.get("warning.chatIcedOut", itemName)));
     }
     return findings;
   }

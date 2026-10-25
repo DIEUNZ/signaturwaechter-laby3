@@ -1,5 +1,6 @@
 package de.bjarne.ahfakewarner.reminder;
 
+import de.bjarne.ahfakewarner.Texts;
 import de.bjarne.ahfakewarner.reminder.ReminderManager.Reminder;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -71,17 +72,15 @@ public final class ReminderService {
     Reminder existing = this.manager.find(AuctionTooltipParser.stableKey(plainLines), endsAt);
     String line;
     if (existing != null) {
-      line = GREEN + CLOCK + " Erinnerung gesetzt für "
-          + ReminderManager.format(existing.remindAt()) + " - [" + this.keyName
-          + "] zum Entfernen";
+      line = GREEN + CLOCK + " " + Texts.get("hint.set",
+          ReminderManager.format(existing.remindAt()), this.keyName);
     } else if (remaining.get().compareTo(Duration.ofMinutes(this.leadMinutes)) <= 0) {
-      line = YELLOW + CLOCK + " Endet gleich (ca. " + endsAtText + ")";
+      line = YELLOW + CLOCK + " " + Texts.get("hint.endingSoon", endsAtText);
     } else if (this.leadMinutes == 0) {
-      line = AQUA + CLOCK + " [" + this.keyName + "] Erinnern bei Ablauf (endet ca. "
-          + endsAtText + ")";
+      line = AQUA + CLOCK + " " + Texts.get("hint.offerAtEnd", this.keyName, endsAtText);
     } else {
-      line = AQUA + CLOCK + " [" + this.keyName + "] Erinnern " + this.leadMinutes
-          + " Min. vor Ende (endet ca. " + endsAtText + ")";
+      line = AQUA + CLOCK + " " + Texts.get("hint.offer", this.keyName, this.leadMinutes,
+          endsAtText);
     }
 
     List<String> lines = new ArrayList<String>(2);
@@ -113,18 +112,17 @@ public final class ReminderService {
     String itemName = AuctionTooltipParser.itemName(lines);
     Optional<Duration> remaining = AuctionTooltipParser.parseRemaining(lines);
     if (!remaining.isPresent()) {
-      return "Keine Restzeit im Tooltip von \"" + itemName + "\" gefunden.";
+      return Texts.get("reminder.noTime", itemName);
     }
 
     String bid = AuctionTooltipParser.parseBid(lines).orElse(null);
     Reminder reminder = this.manager.toggle(AuctionTooltipParser.stableKey(lines), itemName,
         bid, remaining.get().toMillis(), this.leadMinutes, now);
     if (reminder == null) {
-      return "Erinnerung für \"" + itemName + "\" entfernt.";
+      return Texts.get("reminder.removed", itemName);
     }
-    return "Erinnerung gesetzt: \"" + itemName + "\" endet um "
-        + ReminderManager.format(reminder.endsAt()) + ", Erinnerung um "
-        + ReminderManager.format(reminder.remindAt()) + ".";
+    return Texts.get("reminder.set", itemName, ReminderManager.format(reminder.endsAt()),
+        ReminderManager.format(reminder.remindAt()));
   }
 
   /**
@@ -141,10 +139,9 @@ public final class ReminderService {
     for (Reminder reminder : due) {
       long minutesLeft = Math.max(0,
           Math.round((reminder.endsAt() - now) / (double) TimeUnit.MINUTES.toMillis(1)));
-      String text = "Auktion \"" + reminder.itemName() + "\" endet in " + minutesLeft + " Min.";
-      if (reminder.bid() != null) {
-        text += " (Gebot " + reminder.bid() + ")";
-      }
+      String text = reminder.bid() == null
+          ? Texts.get("reminder.due", reminder.itemName(), minutesLeft)
+          : Texts.get("reminder.dueWithBid", reminder.itemName(), minutesLeft, reminder.bid());
       texts.add(CLOCK + " " + text);
     }
     return texts;
@@ -162,26 +159,26 @@ public final class ReminderService {
       return null;
     }
     if (!addonEnabled) {
-      return Collections.singletonList("Das Addon ist deaktiviert.");
+      return Collections.singletonList(Texts.get("disabled"));
     }
 
     String[] parts = lower.split("\\s+");
     String action = parts.length < 2 ? "list" : parts[1];
     if (action.equals("clear")) {
-      return Collections.singletonList(this.manager.clear() + " Erinnerung(en) gelöscht.");
+      return Collections.singletonList(Texts.get("reminder.cleared", this.manager.clear()));
     }
     if (!action.equals("list")) {
-      return Collections.singletonList("Benutzung: /aht list | /aht clear");
+      return Collections.singletonList(Texts.get("reminder.usage"));
     }
 
     List<Reminder> reminders = this.manager.reminders();
     if (reminders.isEmpty()) {
-      return Collections.singletonList("Keine Erinnerungen aktiv.");
+      return Collections.singletonList(Texts.get("reminder.none"));
     }
     List<String> texts = new ArrayList<String>(reminders.size());
     for (Reminder reminder : reminders) {
-      texts.add("- " + reminder.itemName() + " - endet " + ReminderManager.format(reminder.endsAt())
-          + ", Erinnerung " + ReminderManager.format(reminder.remindAt()));
+      texts.add(Texts.get("reminder.entry", reminder.itemName(),
+          ReminderManager.format(reminder.endsAt()), ReminderManager.format(reminder.remindAt())));
     }
     return texts;
   }

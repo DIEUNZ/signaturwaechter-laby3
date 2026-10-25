@@ -12,10 +12,13 @@ import java.util.List;
 import net.labymod.api.LabyModAddon;
 import net.labymod.api.events.MessageSendEvent;
 import net.labymod.api.events.RenderIngameOverlayEvent;
+import net.labymod.gui.elements.DropDownMenu;
+import net.labymod.main.lang.LanguageManager;
 import net.labymod.core.LabyModCore;
 import net.labymod.main.LabyMod;
 import net.labymod.settings.elements.BooleanElement;
 import net.labymod.settings.elements.ControlElement.IconData;
+import net.labymod.settings.elements.DropDownElement;
 import net.labymod.settings.elements.HeaderElement;
 import net.labymod.settings.elements.KeyElement;
 import net.labymod.settings.elements.SettingsElement;
@@ -38,6 +41,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   private static final String YELLOW = "§e";
 
   private static final String KEY_ENABLED = "enabled";
+  private static final String KEY_LANGUAGE = "language";
   private static final String KEY_WHITELIST = "whitelist";
   private static final String KEY_THRESHOLD = "threshold";
   private static final String KEY_ICED_OUT = "icedOutCheck";
@@ -127,10 +131,9 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     }
     this.statusChecked = true;
     if (!TooltipHook.isInstalled() || !SlotHook.isInstalled() || !KeyHook.isInstalled()) {
-      getApi().displayMessageInChat(PREFIX + "§cNicht alles konnte eingebaut werden"
-          + " (Tooltip: " + yesNo(TooltipHook.isInstalled())
-          + ", Rahmen: " + yesNo(SlotHook.isInstalled())
-          + ", Timer-Taste: " + yesNo(KeyHook.isInstalled()) + ").");
+      getApi().displayMessageInChat(PREFIX + "§c" + Texts.get("notInstalled",
+          yesNo(TooltipHook.isInstalled()), yesNo(SlotHook.isInstalled()),
+          yesNo(KeyHook.isInstalled())));
     }
   }
 
@@ -140,11 +143,13 @@ public class AhFakeWarnerAddon extends LabyModAddon {
       return;
     }
     this.lastDueCheck = now;
+    // Für "Wie Spielsprache"; die Spielsprache kann sich jederzeit ändern
+    Texts.setGameLocale(LanguageManager.lastLocaleCode);
     // Für "Höchstbietender: <Name>" in der Slot-Farbe; kann sich mit dem Account ändern
     SlotHook.setPlayerName(getApi().getPlayerUsername());
     for (String text : this.reminders.pollDue(now)) {
       getApi().displayMessageInChat(PREFIX + YELLOW + text);
-      LabyMod.getInstance().notifyMessageRaw("Auktions-Erinnerung", text);
+      LabyMod.getInstance().notifyMessageRaw(Texts.get("reminder.title"), text);
       this.playSound(REMINDER_SOUND);
     }
   }
@@ -177,6 +182,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   public void loadConfig() {
     JsonObject config = getConfig();
     this.settings.enabled = readBoolean(config, KEY_ENABLED, true);
+    this.settings.language = readLanguage(config);
     this.settings.whitelist = readString(config, KEY_WHITELIST, AddonSettings.DEFAULT_WHITELIST);
     this.settings.threshold = AddonSettings.clampThreshold(
         readInt(config, KEY_THRESHOLD, AddonSettings.DEFAULT_THRESHOLD));
@@ -207,6 +213,30 @@ public class AhFakeWarnerAddon extends LabyModAddon {
             save(KEY_ENABLED, value);
           }
         }, this.settings.enabled));
+
+    // Wie im LabyMod-4-Addon: betrifft Meldungen und Hinweise, nicht diese Einstellungsseite
+    DropDownMenu<Texts.Language> languageMenu =
+        new DropDownMenu<Texts.Language>("", 0, 0, 0, 0)
+            .fill(Texts.Language.values());
+    languageMenu.setSelected(this.settings.language);
+    DropDownElement<Texts.Language> language = new DropDownElement<Texts.Language>(
+        "Sprache der Meldungen", languageMenu, new IconData(Material.BOOK_AND_QUILL),
+        new DropDownElement.DrowpDownLoadValue<Texts.Language>() {
+          @Override
+          public Texts.Language load(String value) {
+            return Texts.Language.valueOf(value);
+          }
+        });
+    language.setChangeListener(new Consumer<Texts.Language>() {
+      @Override
+      public void accept(Texts.Language value) {
+        settings.language = value;
+        save(KEY_LANGUAGE, value.name());
+      }
+    });
+    language.bindDescription("Sprache der Chat-Meldungen und Hinweise des Addons, unabhängig"
+        + " von der Spielsprache. Die Einstellungsseite selbst bleibt deutsch.");
+    list.add(language);
 
     StringElement whitelist = new StringElement("Vertrauenswürdige Signierer",
         new IconData(Material.NAME_TAG), this.settings.whitelist, new Consumer<String>() {
@@ -378,6 +408,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   }
 
   private void applySettings() {
+    Texts.setLanguage(this.settings.language);
     TooltipHook.setWarner(this.settings.createWarner());
     TooltipHook.configureFirstHover(this.firstSeen,
         this.settings.enabled && this.settings.chatWarning,
@@ -399,7 +430,16 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   }
 
   private static String yesNo(boolean value) {
-    return value ? "ja" : "nein";
+    return Texts.get(value ? "yes" : "no");
+  }
+
+  private static Texts.Language readLanguage(JsonObject config) {
+    String name = readString(config, KEY_LANGUAGE, Texts.Language.GERMAN.name());
+    try {
+      return Texts.Language.valueOf(name);
+    } catch (IllegalArgumentException unknown) {
+      return Texts.Language.GERMAN;
+    }
   }
 
   private static boolean readBoolean(JsonObject config, String key, boolean fallback) {

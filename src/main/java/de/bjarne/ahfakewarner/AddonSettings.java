@@ -15,6 +15,7 @@ public final class AddonSettings {
   public static final int MAX_THRESHOLD = 4;
 
   public boolean enabled = true;
+  public Texts.Language language = Texts.Language.GERMAN;
   public String whitelist = DEFAULT_WHITELIST;
   public int threshold = DEFAULT_THRESHOLD;
   public boolean icedOutCheck = true;
