@@ -3,6 +3,7 @@
   "offline": true,
   "name": "AH-Fake-Warner",
   "mainClass": "de.bjarne.ahfakewarner.AhFakeWarnerAddon",
+  "transformerClass": "de.bjarne.ahfakewarner.asm.AhFakeWarnerTransformer",
   "description": "Warnt im GrieferGames-Auktionshaus vor gefälschten Signaturen und Iced-Out-Items. Arbeitet nur lokal.",
   "version": 1,
   "author": "die_unz",

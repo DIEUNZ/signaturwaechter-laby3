@@ -1,7 +1,9 @@
 package de.bjarne.ahfakewarner;
 
+import de.bjarne.ahfakewarner.extract.SignatureExtractor;
+import de.bjarne.ahfakewarner.hook.TooltipHook;
+import java.util.Collections;
 import java.util.List;
-
 import net.labymod.api.LabyModAddon;
 import net.labymod.api.events.RenderIngameOverlayEvent;
 import net.labymod.settings.elements.SettingsElement;
@@ -9,41 +11,50 @@ import net.labymod.settings.elements.SettingsElement;
 /**
  * Einstiegspunkt des LabyMod-3-Addons.
  *
- * Etappe 1 (Spike): Prüft nur, ob das Addon geladen wird, und schreibt
- * beim ersten Betreten einer Welt eine Zeile in den Chat.
+ * Die Tooltip-Warnung selbst läuft über den ASM-Eingriff in {@code ItemStack.getTooltip}
+ * (siehe {@code AhFakeWarnerTransformer}); hier wird nur die Prüflogik bereitgestellt.
  */
 public class AhFakeWarnerAddon extends LabyModAddon {
 
-    static final String PREFIX = "§c[AH-Fake-Warner] §f";
+  static final String PREFIX = "§c[AH-Fake-Warner] §f";
 
-    /** Merkt sich, ob die Begrüßung in dieser Sitzung schon ausgegeben wurde. */
-    private boolean greeted;
+  // Standardwerte wie im LabyMod-4-Addon; Einstellungen folgen in Etappe 4
+  private static final List<String> DEFAULT_WHITELIST = Collections.singletonList("AbgegrieftHD");
+  private static final int DEFAULT_THRESHOLD = 2;
 
-    @Override
-    public void onEnable() {
-        System.out.println("[AH-Fake-Warner] Addon geladen (LabyMod 3)");
+  /** Merkt sich, ob der Status in dieser Sitzung schon im Chat stand. */
+  private boolean statusShown;
 
-        // Es gibt kein Tick- oder Welt-betreten-Event; das Overlay wird aber nur
-        // im Spiel gezeichnet. Beim ersten Mal im Spiel einmalig grüßen.
-        getApi().getEventManager().register(new RenderIngameOverlayEvent() {
-            @Override
-            public void onRender(float partialTicks) {
-                if (greeted || !getApi().isIngame()) {
-                    return;
-                }
-                greeted = true;
-                getApi().displayMessageInChat(PREFIX + "Hallo! Das Addon läuft in LabyMod 3.");
-            }
-        });
-    }
+  @Override
+  public void onEnable() {
+    TooltipHook.setWarner(new TooltipWarner(DEFAULT_WHITELIST, DEFAULT_THRESHOLD,
+        SignatureExtractor.DEFAULT_PATTERN, true));
+    System.out.println("[AH-Fake-Warner] Addon geladen, Tooltip-Eingriff "
+        + (TooltipHook.isInstalled() ? "aktiv" : "fehlt"));
 
-    @Override
-    public void loadConfig() {
-        // Noch keine Einstellungen (kommt in Etappe 4).
-    }
+    // Es gibt kein Tick- oder Welt-betreten-Event; das Overlay wird aber nur
+    // im Spiel gezeichnet. Beim ersten Mal im Spiel einmalig den Status zeigen.
+    getApi().getEventManager().register(new RenderIngameOverlayEvent() {
+      @Override
+      public void onRender(float partialTicks) {
+        if (statusShown || !getApi().isIngame()) {
+          return;
+        }
+        statusShown = true;
+        getApi().displayMessageInChat(TooltipHook.isInstalled()
+            ? PREFIX + "Tooltip-Warnung aktiv."
+            : PREFIX + "§cTooltip-Warnung konnte nicht eingebaut werden.");
+      }
+    });
+  }
 
-    @Override
-    protected void fillSettings(List<SettingsElement> list) {
-        // Noch keine Einstellungen (kommt in Etappe 4).
-    }
+  @Override
+  public void loadConfig() {
+    // Noch keine Einstellungen (kommt in Etappe 4).
+  }
+
+  @Override
+  protected void fillSettings(List<SettingsElement> list) {
+    // Noch keine Einstellungen (kommt in Etappe 4).
+  }
 }
