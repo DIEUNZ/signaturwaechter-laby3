@@ -19,6 +19,7 @@ public final class AddonSettings {
   public int threshold = DEFAULT_THRESHOLD;
   public boolean icedOutCheck = true;
   public boolean slotFrame = true;
+  public boolean chatWarning = false;
 
   // Auktions-Erinnerung
   /** LWJGL-Tastencode von R. */

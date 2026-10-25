@@ -2,6 +2,7 @@ package de.bjarne.ahfakewarner;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import de.bjarne.ahfakewarner.hook.ChatOutput;
 import de.bjarne.ahfakewarner.hook.KeyHook;
 import de.bjarne.ahfakewarner.hook.SlotHook;
 import de.bjarne.ahfakewarner.hook.TooltipHook;
@@ -41,6 +42,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   private static final String KEY_THRESHOLD = "threshold";
   private static final String KEY_ICED_OUT = "icedOutCheck";
   private static final String KEY_SLOT_FRAME = "slotFrame";
+  private static final String KEY_CHAT_WARNING = "chatWarning";
   private static final String KEY_REMINDER_ENABLED = "reminderEnabled";
   private static final String KEY_REMINDER_KEY = "reminderKey";
   private static final String KEY_REMINDER_LEAD = "reminderLeadMinutes";
@@ -54,6 +56,8 @@ public class AhFakeWarnerAddon extends LabyModAddon {
 
   private final AddonSettings settings = new AddonSettings();
   private final ReminderService reminders = new ReminderService();
+  // Bleibt über Einstellungsänderungen erhalten, damit nicht erneut gewarnt wird
+  private final ChatWarner chatWarner = new ChatWarner();
 
   /** Merkt sich, ob der Eingriffs-Status in dieser Sitzung schon geprüft wurde. */
   private boolean statusChecked;
@@ -69,12 +73,14 @@ public class AhFakeWarnerAddon extends LabyModAddon {
 
     TooltipHook.setReminders(this.reminders);
     SlotHook.setReminders(this.reminders);
-    KeyHook.setup(this.reminders, new KeyHook.ChatOutput() {
+    ChatOutput chat = new ChatOutput() {
       @Override
       public void send(String text) {
         getApi().displayMessageInChat(PREFIX + text);
       }
-    });
+    };
+    KeyHook.setup(this.reminders, chat);
+    TooltipHook.setChat(chat);
 
     // Es gibt kein Tick- oder Welt-betreten-Event; das Overlay wird aber in jedem Frame im
     // Spiel gezeichnet (auch unter offenen Inventaren)
@@ -167,6 +173,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
         readInt(config, KEY_THRESHOLD, AddonSettings.DEFAULT_THRESHOLD));
     this.settings.icedOutCheck = readBoolean(config, KEY_ICED_OUT, true);
     this.settings.slotFrame = readBoolean(config, KEY_SLOT_FRAME, true);
+    this.settings.chatWarning = readBoolean(config, KEY_CHAT_WARNING, false);
     this.settings.reminderEnabled = readBoolean(config, KEY_REMINDER_ENABLED, true);
     this.settings.reminderKey = readInt(config, KEY_REMINDER_KEY,
         AddonSettings.DEFAULT_REMINDER_KEY);
@@ -240,6 +247,18 @@ public class AhFakeWarnerAddon extends LabyModAddon {
             save(KEY_SLOT_FRAME, value);
           }
         }, this.settings.slotFrame));
+
+    BooleanElement chatWarning = new BooleanElement("Einmalige Chat-Warnung",
+        new IconData(Material.PAPER), new Consumer<Boolean>() {
+          @Override
+          public void accept(Boolean value) {
+            settings.chatWarning = value;
+            save(KEY_CHAT_WARNING, value);
+          }
+        }, this.settings.chatWarning);
+    chatWarning.bindDescription("Schreibt beim ersten Hovern über ein gefälschtes Item eine"
+        + " Warnung in den Chat (nur für dich sichtbar).");
+    list.add(chatWarning);
 
     this.fillReminderSettings(list);
     this.fillHighlightSettings(list);
@@ -338,6 +357,8 @@ public class AhFakeWarnerAddon extends LabyModAddon {
 
   private void applySettings() {
     TooltipHook.setWarner(this.settings.createWarner());
+    TooltipHook.setChatWarner(
+        this.settings.enabled && this.settings.chatWarning ? this.chatWarner : null);
     SlotHook.configure(this.settings.enabled && this.settings.slotFrame,
         this.settings.enabled && this.settings.highlightReminder,
         this.settings.enabled && this.settings.highlightBid);

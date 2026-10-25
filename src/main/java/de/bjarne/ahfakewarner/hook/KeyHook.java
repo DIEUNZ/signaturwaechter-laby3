@@ -8,11 +8,6 @@ import de.bjarne.ahfakewarner.reminder.ReminderService;
  */
 public final class KeyHook {
 
-  /** Gibt Meldungen im Chat aus (vom Addon gesetzt, damit hier kein LabyMod-Code nötig ist). */
-  public interface ChatOutput {
-    void send(String text);
-  }
-
   private static volatile ReminderService reminders;
   private static volatile ChatOutput output;
   private static volatile boolean installed;

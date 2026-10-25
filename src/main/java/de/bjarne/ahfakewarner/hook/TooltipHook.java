@@ -1,6 +1,8 @@
 package de.bjarne.ahfakewarner.hook;
 
+import de.bjarne.ahfakewarner.ChatWarner;
 import de.bjarne.ahfakewarner.TooltipWarner;
+import de.bjarne.ahfakewarner.TooltipWarner.Finding;
 import de.bjarne.ahfakewarner.extract.SignatureExtractor;
 import de.bjarne.ahfakewarner.reminder.ReminderService;
 import java.util.ArrayList;
@@ -16,6 +18,8 @@ public final class TooltipHook {
 
   private static volatile TooltipWarner warner;
   private static volatile ReminderService reminders;
+  private static volatile ChatWarner chatWarner;
+  private static volatile ChatOutput chat;
   private static volatile boolean installed;
   private static boolean errorLogged;
   // Verhindert, dass die Slot-Prüfung über ihren eigenen Tooltip-Aufruf Warnzeilen anhängt
@@ -49,8 +53,10 @@ public final class TooltipHook {
       // Erst alles berechnen, dann anhängen, damit die Prüfungen den Original-Tooltip sehen
       List<String> added = new ArrayList<String>(4);
       if (currentWarner != null) {
-        added.addAll(currentWarner.warningsFor(lines,
-            enchantments != null && !enchantments.isEmpty()));
+        List<Finding> findings = currentWarner.findings(lines,
+            enchantments != null && !enchantments.isEmpty());
+        added.addAll(TooltipWarner.tooltipLines(findings));
+        sendChatWarnings(findings);
       }
       if (currentReminders != null) {
         List<String> plain = new ArrayList<String>(lines.size());
@@ -75,6 +81,27 @@ public final class TooltipHook {
 
   public static TooltipWarner warner() {
     return warner;
+  }
+
+  // Einmalige Chat-Warnung, nur wenn in den Einstellungen eingeschaltet
+  private static void sendChatWarnings(List<Finding> findings) {
+    ChatWarner warner = chatWarner;
+    ChatOutput output = chat;
+    if (warner == null || output == null || findings.isEmpty()) {
+      return;
+    }
+    for (String message : warner.newMessages(findings)) {
+      output.send(message);
+    }
+  }
+
+  /** @param warner einmalige Chat-Warnung oder {@code null}, wenn ausgeschaltet */
+  public static void setChatWarner(ChatWarner warner) {
+    chatWarner = warner;
+  }
+
+  public static void setChat(ChatOutput output) {
+    chat = output;
   }
 
   /** Auktions-Erinnerung: merkt sich das gehoverte Item und liefert die Hinweiszeile. */
