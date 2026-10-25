@@ -14,7 +14,7 @@ Tooltip, Slot-Rahmen und Timer-Taste werden per ASM-Transformer (`ItemStack.getT
 ## Installation
 
 1. LabyMod 3 für Minecraft 1.8.9 installieren und einmal starten.
-2. `ah-fake-warner-lm3.jar` in den Ordner `%APPDATA%\.minecraft\LabyMod\addons-1.8` legen (Ordner anlegen, falls er fehlt).
+2. Die neueste `ah-fake-warner-lm3.jar` unter [Releases](https://github.com/DIEUNZ/signaturwaechter-laby3/releases/latest) herunterladen und in den Ordner `%APPDATA%\.minecraft\LabyMod\addons-1.8` legen (Ordner anlegen, falls er fehlt).
 3. Minecraft mit dem Profil „LabyMod 3 (1.8.9)“ starten und einen Server oder eine Welt betreten.
 
 Im Chat erscheint nur dann eine Meldung, wenn sich etwas nicht einbauen ließ.
