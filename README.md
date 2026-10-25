@@ -3,9 +3,9 @@
 Nachbau des LabyMod-4-Addons [AH-Fake-Warner](https://github.com/DIEUNZ/signaturwaechter) für **LabyMod 3** (Minecraft 1.8.9).
 Warnt im GrieferGames-Auktionshaus vor gefälschten Signaturen und gefälschten „Iced Out“-Items. Arbeitet nur lokal, es wird nichts an Server oder Dritte gesendet.
 
-**Stand:** Etappe 2. Im Item-Tooltip erscheint eine rote Warnzeile bei gefälschter Signatur (Standard-Signierer `AbgegrieftHD`) und bei „Iced Out“-Items ohne Verzauberung. Einstellungen gibt es noch nicht.
+**Stand:** Etappe 3. Im Item-Tooltip erscheint eine rote Warnzeile bei gefälschter Signatur (Standard-Signierer `AbgegrieftHD`) und bei „Iced Out“-Items ohne Verzauberung; solche Items bekommen in Truhen und im Auktionshaus einen roten Rahmen. Einstellungen gibt es noch nicht.
 
-Der Tooltip wird per ASM-Transformer in `ItemStack.getTooltip` ergänzt, weil die LabyMod-3-API kein Tooltip-Event hat.
+Tooltip und Slot-Rahmen werden per ASM-Transformer (`ItemStack.getTooltip`, `GuiContainer.drawSlot`) eingebaut, weil die LabyMod-3-API dafür keine Events hat.
 
 ## Installation
 
@@ -13,7 +13,7 @@ Der Tooltip wird per ASM-Transformer in `ItemStack.getTooltip` ergänzt, weil di
 2. `ah-fake-warner-lm3.jar` in den Ordner `%APPDATA%\.minecraft\LabyMod\addons-1.8` legen (Ordner anlegen, falls er fehlt).
 3. Minecraft mit dem Profil „LabyMod 3 (1.8.9)“ starten und einen Server oder eine Welt betreten.
 
-Im Chat erscheint: `[AH-Fake-Warner] Tooltip-Warnung aktiv.`
+Im Chat erscheint: `[AH-Fake-Warner] Tooltip-Warnung und Slot-Rahmen aktiv.`
 
 **Update:** Alte Jar im Ordner `addons-1.8` durch die neue ersetzen (nur eine Jar des Addons darf dort liegen).
 
