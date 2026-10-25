@@ -5,9 +5,9 @@ Warnt im GrieferGames-Auktionshaus vor gefälschten Signaturen und gefälschten 
 
 **Stand:** Etappe 5 (Erinnerung). Im Item-Tooltip erscheint eine rote Warnzeile bei gefälschter Signatur (Standard-Signierer `AbgegrieftHD`) und bei „Iced Out“-Items ohne Verzauberung; solche Items bekommen in Truhen und im Auktionshaus einen roten Rahmen.
 
-**Auktions-Erinnerung:** Über einer Auktion `R` drücken – das Addon erinnert (Chat, Popup, Ton) kurz vor Ablauf; nochmal `R` entfernt die Erinnerung. Der Tooltip schlägt das vor. `/aht` listet die Erinnerungen, `/aht clear` löscht sie (nur lokal, nichts geht an den Server).
+**Auktions-Erinnerung:** Über einer Auktion `R` drücken – das Addon erinnert (Chat, Popup, Ton) kurz vor Ablauf; nochmal `R` entfernt die Erinnerung. Der Tooltip schlägt das vor. Im Auktionshaus werden Slots mit Timer blau und mit eigenem Gebot grün eingefärbt (beides: gestreift). `/aht` listet die Erinnerungen, `/aht clear` löscht sie (nur lokal, nichts geht an den Server).
 
-**Einstellungen** (LabyMod-Einstellungen → Addons → AH-Fake-Warner): an/aus, vertrauenswürdige Signierer (durch Komma getrennt, Standard `AbgegrieftHD`), Ähnlichkeits-Schwelle 0–4 (Standard 2), Iced-Out-Prüfung, roter Rahmen; Erinnerung an/aus, Taste, Minuten vor Ablauf (Standard 2), Vorschlag im Tooltip. Gespeichert in `LabyMod/addons-1.8/config/AH-Fake-Warner.json`.
+**Einstellungen** (LabyMod-Einstellungen → Addons → AH-Fake-Warner): an/aus, vertrauenswürdige Signierer (durch Komma getrennt, Standard `AbgegrieftHD`), Ähnlichkeits-Schwelle 0–4 (Standard 2), Iced-Out-Prüfung, roter Rahmen; Erinnerung an/aus, Taste, Minuten vor Ablauf (Standard 2), Vorschlag im Tooltip; Slot-Farben für Timer und eigenes Gebot. Gespeichert in `LabyMod/addons-1.8/config/AH-Fake-Warner.json`.
 
 Tooltip, Slot-Rahmen und Timer-Taste werden per ASM-Transformer (`ItemStack.getTooltip`, `GuiContainer.drawSlot`, `GuiContainer.keyTyped`) eingebaut, weil die LabyMod-3-API dafür keine Events hat.
 
