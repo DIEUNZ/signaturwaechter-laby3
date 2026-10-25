@@ -12,6 +12,7 @@ $libs = [ordered]@{
     'lib/launchwrapper-1.12.jar' = 'https://libraries.minecraft.net/net/minecraft/launchwrapper/1.12/launchwrapper-1.12.jar'
     'lib/asm-debug-all-5.0.3.jar' = 'https://repo1.maven.org/maven2/org/ow2/asm/asm-debug-all/5.0.3/asm-debug-all-5.0.3.jar'
     'lib/lwjgl-2.9.4-nightly-20150209.jar' = 'https://libraries.minecraft.net/org/lwjgl/lwjgl/lwjgl/2.9.4-nightly-20150209/lwjgl-2.9.4-nightly-20150209.jar'
+    'lib/gson-2.2.4.jar' = 'https://libraries.minecraft.net/com/google/code/gson/gson/2.2.4/gson-2.2.4.jar'
     'lib/junit-platform-console-standalone-1.11.4.jar' = 'https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.11.4/junit-platform-console-standalone-1.11.4.jar'
 }
 New-Item -ItemType Directory -Force lib | Out-Null
@@ -21,15 +22,21 @@ foreach ($entry in $libs.GetEnumerator()) {
         Invoke-WebRequest -Uri $entry.Value -OutFile $entry.Key -UseBasicParsing
     }
 }
-$compileCp = 'lib/lm_api_mc1.8.9.jar;lib/launchwrapper-1.12.jar;lib/asm-debug-all-5.0.3.jar;lib/lwjgl-2.9.4-nightly-20150209.jar'
+$compileCp = 'lib/lm_api_mc1.8.9.jar;lib/launchwrapper-1.12.jar;lib/asm-debug-all-5.0.3.jar;lib/lwjgl-2.9.4-nightly-20150209.jar;lib/gson-2.2.4.jar'
 $junit = 'lib/junit-platform-console-standalone-1.11.4.jar'
 
 # Sauberer Neubau
 if (Test-Path build) { Remove-Item -Recurse -Force build }
 New-Item -ItemType Directory -Force build/classes | Out-Null
 
+# Platzhalter für Minecraft-Klassen, die javac nur zur Überladungsauflösung braucht (nicht in der Jar)
+New-Item -ItemType Directory -Force build/stubs | Out-Null
+$stubs = Get-ChildItem -Recurse -Filter *.java src/stubs/java | ForEach-Object { $_.FullName }
+& javac --release 8 -encoding UTF-8 -nowarn -Xlint:-options -d build/stubs $stubs
+if ($LASTEXITCODE -ne 0) { throw 'Platzhalter kompilieren fehlgeschlagen' }
+
 $sources = Get-ChildItem -Recurse -Filter *.java src/main/java | ForEach-Object { $_.FullName }
-& javac --release 8 -encoding UTF-8 -nowarn -Xlint:-options -cp $compileCp -d build/classes $sources
+& javac --release 8 -encoding UTF-8 -nowarn -Xlint:-options -cp "$compileCp;build/stubs" -d build/classes $sources
 if ($LASTEXITCODE -ne 0) { throw 'Kompilieren fehlgeschlagen' }
 
 # Tests der Erkennungslogik (ohne Minecraft)
