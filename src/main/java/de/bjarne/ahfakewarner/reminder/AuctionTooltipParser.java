@@ -21,6 +21,8 @@ public final class AuctionTooltipParser {
   // zeigt "Dein Gebotslimit", sobald man geboten hat
   private static final List<String> OWN_BID_MARKERS =
       Arrays.asList("du bist aktuell höchstbietender", "dein gebotslimit");
+  // Mit F3+H hängt Minecraft die Item-ID an den Namen: " (#0401)" bzw. " (#0383/91)"
+  private static final Pattern ADVANCED_ID = Pattern.compile("\\s*\\(#\\d{4,}(?:/\\d+)?\\)$");
   private static final Pattern TIME_PART = Pattern.compile(
       "(\\d+)\\s*(tage?|d|stunden?|std|h|minuten?|min|m|sekunden?|sek|s)\\b");
 
@@ -80,14 +82,24 @@ public final class AuctionTooltipParser {
   /** Kennung einer Auktion: alles vor dem Auktionsteil (Name, Lore, Signatur, Kennung). */
   public static String stableKey(List<String> lines) {
     StringBuilder key = new StringBuilder();
-    for (String line : lines) {
+    for (int i = 0; i < lines.size(); i++) {
+      String line = lines.get(i);
       String lower = SignatureExtractor.stripFormatting(line).toLowerCase(Locale.ROOT);
       if (lower.contains(BID_LABEL) || lower.contains(TIME_LABEL)) {
         break;
       }
-      key.append(line).append('\n');
+      // Der Name muss gleich bleiben, egal ob erweiterte Tooltips (F3+H) an sind
+      key.append(i == 0 ? itemName(lines) : line).append('\n');
     }
     return key.toString();
+  }
+
+  /** Itemname (Zeile 0) ohne Farbcodes und ohne die Item-ID der erweiterten Tooltips. */
+  public static String itemName(List<String> lines) {
+    if (lines.isEmpty()) {
+      return "";
+    }
+    return ADVANCED_ID.matcher(SignatureExtractor.stripFormatting(lines.get(0))).replaceFirst("");
   }
 
   // Wert steht entweder hinter dem Doppelpunkt oder in der nächsten Zeile

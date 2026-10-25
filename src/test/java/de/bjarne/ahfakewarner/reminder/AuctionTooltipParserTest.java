@@ -64,6 +64,15 @@ class AuctionTooltipParserTest {
   }
 
   @Test
+  void itemIdDerErweitertenTooltipsZaehltNicht() {
+    assertEquals("Apple", AuctionTooltipParser.itemName(Arrays.asList("§fApple (#0260)")));
+    assertEquals("Schaf", AuctionTooltipParser.itemName(Arrays.asList("Schaf (#0383/91)")));
+    assertEquals("Kiste (#12)", AuctionTooltipParser.itemName(Arrays.asList("Kiste (#12)")));
+    assertEquals(AuctionTooltipParser.stableKey(Arrays.asList("Apple", "Aktuelles Gebot:")),
+        AuctionTooltipParser.stableKey(Arrays.asList("Apple (#0260)", "Aktuelles Gebot:")));
+  }
+
+  @Test
   void auktionErkennen() {
     assertTrue(AuctionTooltipParser.isAuction(TOOLTIP));
     assertTrue(!AuctionTooltipParser.isAuction(Arrays.asList("Stein")));

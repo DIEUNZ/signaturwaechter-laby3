@@ -41,14 +41,14 @@ class ReminderServiceTest {
     ReminderService service = service();
     service.onTooltip(AUCTION, NOW);
     String set = service.onKey(KEY_R, NOW + 50);
-    assertTrue(set.startsWith("Erinnerung gesetzt: \"Hauptgewinn-Ticket (#0403)\" endet um "), set);
+    assertTrue(set.startsWith("Erinnerung gesetzt: \"Hauptgewinn-Ticket\" endet um "), set);
 
     // Tooltip zeigt jetzt die gesetzte Erinnerung
     assertTrue(service.onTooltip(AUCTION, NOW + 100).get(1).contains("[R] zum Entfernen"));
 
     // Eine Sekunde später, Restzeit gerundet gleich: dieselbe Auktion wird entfernt
     service.onTooltip(AUCTION, NOW + 1000);
-    assertEquals("Erinnerung für \"Hauptgewinn-Ticket (#0403)\" entfernt.",
+    assertEquals("Erinnerung für \"Hauptgewinn-Ticket\" entfernt.",
         service.onKey(KEY_R, NOW + 1050));
   }
 
@@ -76,7 +76,7 @@ class ReminderServiceTest {
     assertTrue(service.pollDue(NOW + 9 * MINUTE).isEmpty());
     List<String> due = service.pollDue(NOW + 10 * MINUTE);
     assertEquals(Arrays.asList(
-        "» Auktion \"Hauptgewinn-Ticket (#0403)\" endet in 2 Min. (Gebot 114.780.500$)"), due);
+        "» Auktion \"Hauptgewinn-Ticket\" endet in 2 Min. (Gebot 114.780.500$)"), due);
     // nur einmal
     assertTrue(service.pollDue(NOW + 11 * MINUTE).isEmpty());
   }
@@ -102,7 +102,7 @@ class ReminderServiceTest {
     service.onTooltip(AUCTION, NOW);
     service.onKey(KEY_R, NOW);
     assertTrue(service.onCommand("/aht list", true).get(0)
-        .startsWith("- Hauptgewinn-Ticket (#0403) - endet "));
+        .startsWith("- Hauptgewinn-Ticket - endet "));
     assertEquals(Arrays.asList("1 Erinnerung(en) gelöscht."), service.onCommand("/AHT clear", true));
     assertEquals(Arrays.asList("Benutzung: /aht list | /aht clear"),
         service.onCommand("/aht foo", true));

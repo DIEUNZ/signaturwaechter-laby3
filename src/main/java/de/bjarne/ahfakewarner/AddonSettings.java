@@ -30,6 +30,10 @@ public final class AddonSettings {
   public int reminderLeadMinutes = 2;
   public boolean reminderHint = true;
 
+  // Slot-Farben im Auktionshaus
+  public boolean highlightReminder = true;
+  public boolean highlightBid = true;
+
   public static int clampLeadMinutes(int value) {
     return Math.max(0, Math.min(MAX_LEAD_MINUTES, value));
   }

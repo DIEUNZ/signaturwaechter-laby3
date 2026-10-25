@@ -90,6 +90,11 @@ public final class ReminderService {
     return lines;
   }
 
+  /** Ob für diese Auktion eine Erinnerung gesetzt ist (für die Slot-Farbe). */
+  public boolean hasReminder(String key, long endsAt) {
+    return this.active && key != null && endsAt >= 0 && this.manager.find(key, endsAt) != null;
+  }
+
   /**
    * Timer-Taste in einem Inventar gedrückt.
    *
@@ -105,7 +110,7 @@ public final class ReminderService {
       return null;
     }
 
-    String itemName = lines.get(0);
+    String itemName = AuctionTooltipParser.itemName(lines);
     Optional<Duration> remaining = AuctionTooltipParser.parseRemaining(lines);
     if (!remaining.isPresent()) {
       return "Keine Restzeit im Tooltip von \"" + itemName + "\" gefunden.";

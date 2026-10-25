@@ -45,6 +45,8 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   private static final String KEY_REMINDER_KEY = "reminderKey";
   private static final String KEY_REMINDER_LEAD = "reminderLeadMinutes";
   private static final String KEY_REMINDER_HINT = "reminderHint";
+  private static final String KEY_HIGHLIGHT_REMINDER = "highlightReminder";
+  private static final String KEY_HIGHLIGHT_BID = "highlightBid";
 
   // Notenblock-Ton von 1.8.9 (ab 1.9 heißt er anders)
   private static final String REMINDER_SOUND = "note.pling";
@@ -66,6 +68,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
         + (KeyHook.isInstalled() ? "aktiv" : "fehlt"));
 
     TooltipHook.setReminders(this.reminders);
+    SlotHook.setReminders(this.reminders);
     KeyHook.setup(this.reminders, new KeyHook.ChatOutput() {
       @Override
       public void send(String text) {
@@ -122,6 +125,8 @@ public class AhFakeWarnerAddon extends LabyModAddon {
       return;
     }
     this.lastDueCheck = now;
+    // Für "Höchstbietender: <Name>" in der Slot-Farbe; kann sich mit dem Account ändern
+    SlotHook.setPlayerName(getApi().getPlayerUsername());
     for (String text : this.reminders.pollDue(now)) {
       getApi().displayMessageInChat(PREFIX + YELLOW + text);
       LabyMod.getInstance().notifyMessageRaw("Auktions-Erinnerung", text);
@@ -168,6 +173,8 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     this.settings.reminderLeadMinutes = AddonSettings.clampLeadMinutes(
         readInt(config, KEY_REMINDER_LEAD, 2));
     this.settings.reminderHint = readBoolean(config, KEY_REMINDER_HINT, true);
+    this.settings.highlightReminder = readBoolean(config, KEY_HIGHLIGHT_REMINDER, true);
+    this.settings.highlightBid = readBoolean(config, KEY_HIGHLIGHT_BID, true);
     this.applySettings();
   }
 
@@ -235,6 +242,35 @@ public class AhFakeWarnerAddon extends LabyModAddon {
         }, this.settings.slotFrame));
 
     this.fillReminderSettings(list);
+    this.fillHighlightSettings(list);
+  }
+
+  private void fillHighlightSettings(List<SettingsElement> list) {
+    list.add(new HeaderElement("Slot-Farben"));
+
+    BooleanElement reminder = new BooleanElement("Slots mit Timer einfärben",
+        new IconData(Material.WATCH), new Consumer<Boolean>() {
+          @Override
+          public void accept(Boolean value) {
+            settings.highlightReminder = value;
+            save(KEY_HIGHLIGHT_REMINDER, value);
+          }
+        }, this.settings.highlightReminder);
+    reminder.bindDescription("Blau: Auktionen, für die du mit der Taste eine Erinnerung gesetzt"
+        + " hast.");
+    list.add(reminder);
+
+    BooleanElement bid = new BooleanElement("Slots mit eigenem Gebot einfärben",
+        new IconData(Material.EMPTY_MAP), new Consumer<Boolean>() {
+          @Override
+          public void accept(Boolean value) {
+            settings.highlightBid = value;
+            save(KEY_HIGHLIGHT_BID, value);
+          }
+        }, this.settings.highlightBid);
+    bid.bindDescription("Grün: wird erkannt, wenn du aktuell Höchstbietender bist oder ein"
+        + " Gebotslimit gesetzt hast. Beides zusammen: diagonal gestreift.");
+    list.add(bid);
   }
 
   private void fillReminderSettings(List<SettingsElement> list) {
@@ -302,7 +338,9 @@ public class AhFakeWarnerAddon extends LabyModAddon {
 
   private void applySettings() {
     TooltipHook.setWarner(this.settings.createWarner());
-    SlotHook.setEnabled(this.settings.enabled && this.settings.slotFrame);
+    SlotHook.configure(this.settings.enabled && this.settings.slotFrame,
+        this.settings.enabled && this.settings.highlightReminder,
+        this.settings.enabled && this.settings.highlightBid);
 
     int key = this.settings.reminderKey;
     boolean hasKey = key > Keyboard.KEY_NONE;

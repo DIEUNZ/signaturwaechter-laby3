@@ -22,7 +22,7 @@ import org.objectweb.asm.tree.VarInsnNode;
  * <ul>
  *   <li>{@code ItemStack.getTooltip}: Warnzeilen anhängen ({@link TooltipHook})</li>
  *   <li>{@code ItemStack}: Zugriff auf Tooltip und Verzauberungen für das Addon</li>
- *   <li>{@code GuiContainer.drawSlot}: roter Rahmen um gefälschte Items ({@link SlotHook})</li>
+ *   <li>{@code GuiContainer.drawSlot}: Slot-Farben und roter Rahmen ({@link SlotHook})</li>
  *   <li>{@code GuiContainer.keyTyped}: Timer-Taste der Auktions-Erinnerung ({@link KeyHook})</li>
  * </ul>
  *
@@ -203,7 +203,7 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
     return false;
   }
 
-  // Vor jedem "return" von drawSlot: SlotHook.afterDrawSlot(slot.getStack(), slot.x, slot.y)
+  // drawSlot: am Anfang SlotHook.beforeDrawSlot, vor jedem "return" SlotHook.afterDrawSlot
   private static boolean patchDrawSlot(ClassNode node) {
     int patched = 0;
     for (MethodNode method : node.methods) {
@@ -211,23 +211,31 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
         continue;
       }
       for (AbstractInsnNode insn : method.instructions.toArray()) {
-        if (insn.getOpcode() != Opcodes.RETURN) {
-          continue;
+        if (insn.getOpcode() == Opcodes.RETURN) {
+          method.instructions.insertBefore(insn, slotHookCall("afterDrawSlot"));
+          patched++;
         }
-        InsnList hook = new InsnList();
-        hook.add(new VarInsnNode(Opcodes.ALOAD, 1));
-        hook.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, SLOT, SLOT_GET_STACK,
-            "()L" + ITEM_STACK + ";", false));
-        hook.add(new VarInsnNode(Opcodes.ALOAD, 1));
-        hook.add(new FieldInsnNode(Opcodes.GETFIELD, SLOT, SLOT_X, "I"));
-        hook.add(new VarInsnNode(Opcodes.ALOAD, 1));
-        hook.add(new FieldInsnNode(Opcodes.GETFIELD, SLOT, SLOT_Y, "I"));
-        hook.add(new MethodInsnNode(Opcodes.INVOKESTATIC, SLOT_HOOK, "afterDrawSlot",
-            "(Ljava/lang/Object;II)V", false));
-        method.instructions.insertBefore(insn, hook);
-        patched++;
+      }
+      if (patched > 0) {
+        // Am Anfang, damit die Farbe hinter dem Item liegt
+        method.instructions.insert(slotHookCall("beforeDrawSlot"));
       }
     }
     return patched > 0;
+  }
+
+  // SlotHook.<name>(slot.getStack(), slot.xDisplayPosition, slot.yDisplayPosition)
+  private static InsnList slotHookCall(String name) {
+    InsnList hook = new InsnList();
+    hook.add(new VarInsnNode(Opcodes.ALOAD, 1));
+    hook.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, SLOT, SLOT_GET_STACK,
+        "()L" + ITEM_STACK + ";", false));
+    hook.add(new VarInsnNode(Opcodes.ALOAD, 1));
+    hook.add(new FieldInsnNode(Opcodes.GETFIELD, SLOT, SLOT_X, "I"));
+    hook.add(new VarInsnNode(Opcodes.ALOAD, 1));
+    hook.add(new FieldInsnNode(Opcodes.GETFIELD, SLOT, SLOT_Y, "I"));
+    hook.add(new MethodInsnNode(Opcodes.INVOKESTATIC, SLOT_HOOK, name,
+        "(Ljava/lang/Object;II)V", false));
+    return hook;
   }
 }
