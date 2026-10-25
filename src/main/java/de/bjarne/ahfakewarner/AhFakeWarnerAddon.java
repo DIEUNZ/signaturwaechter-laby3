@@ -35,7 +35,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
 
   private final AddonSettings settings = new AddonSettings();
 
-  /** Merkt sich, ob der Status in dieser Sitzung schon im Chat stand. */
+  /** Merkt sich, ob der Eingriffs-Status in dieser Sitzung schon geprüft wurde. */
   private boolean statusChecked;
 
   @Override
@@ -45,7 +45,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
         + (SlotHook.isInstalled() ? "aktiv" : "fehlt"));
 
     // Es gibt kein Tick- oder Welt-betreten-Event; das Overlay wird aber nur im Spiel
-    // gezeichnet. Beim ersten Mal im Spiel einmalig den Status zeigen.
+    // gezeichnet. Beim ersten Mal im Spiel nur melden, falls ein Eingriff fehlt.
     getApi().getEventManager().register(new RenderIngameOverlayEvent() {
       @Override
       public void onRender(float partialTicks) {
@@ -53,9 +53,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
           return;
         }
         statusChecked = true;
-        if (TooltipHook.isInstalled() && SlotHook.isInstalled()) {
-          getApi().displayMessageInChat(PREFIX + "Tooltip-Warnung und Slot-Rahmen aktiv.");
-        } else {
+        if (!TooltipHook.isInstalled() || !SlotHook.isInstalled()) {
           getApi().displayMessageInChat(PREFIX + "§cNicht alles konnte eingebaut werden"
               + " (Tooltip: " + (TooltipHook.isInstalled() ? "ja" : "nein")
               + ", Rahmen: " + (SlotHook.isInstalled() ? "ja" : "nein") + ").");
