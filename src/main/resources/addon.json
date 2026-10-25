@@ -1,0 +1,10 @@
+{
+  "uuid": "62e3767f-1b75-4bf0-89b7-cfccba2d1db2",
+  "offline": true,
+  "name": "AH-Fake-Warner",
+  "mainClass": "de.bjarne.ahfakewarner.AhFakeWarnerAddon",
+  "description": "Warnt im GrieferGames-Auktionshaus vor gefälschten Signaturen und Iced-Out-Items. Arbeitet nur lokal.",
+  "version": 1,
+  "author": "die_unz",
+  "category": 0
+}
