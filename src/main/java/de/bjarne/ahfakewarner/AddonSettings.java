@@ -20,6 +20,7 @@ public final class AddonSettings {
   public boolean icedOutCheck = true;
   public boolean slotFrame = true;
   public boolean chatWarning = false;
+  public boolean warningSound = true;
 
   // Auktions-Erinnerung
   /** LWJGL-Tastencode von R. */

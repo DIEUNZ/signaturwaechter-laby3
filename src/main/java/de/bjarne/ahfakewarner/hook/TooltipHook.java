@@ -1,6 +1,6 @@
 package de.bjarne.ahfakewarner.hook;
 
-import de.bjarne.ahfakewarner.ChatWarner;
+import de.bjarne.ahfakewarner.FirstSeen;
 import de.bjarne.ahfakewarner.TooltipWarner;
 import de.bjarne.ahfakewarner.TooltipWarner.Finding;
 import de.bjarne.ahfakewarner.extract.SignatureExtractor;
@@ -18,7 +18,9 @@ public final class TooltipHook {
 
   private static volatile TooltipWarner warner;
   private static volatile ReminderService reminders;
-  private static volatile ChatWarner chatWarner;
+  private static volatile FirstSeen firstSeen;
+  private static volatile boolean chatWarning;
+  private static volatile Runnable warningSound;
   private static volatile ChatOutput chat;
   private static volatile boolean installed;
   private static boolean errorLogged;
@@ -56,7 +58,7 @@ public final class TooltipHook {
         List<Finding> findings = currentWarner.findings(lines,
             enchantments != null && !enchantments.isEmpty());
         added.addAll(TooltipWarner.tooltipLines(findings));
-        sendChatWarnings(findings);
+        notifyFirstHover(findings);
       }
       if (currentReminders != null) {
         List<String> plain = new ArrayList<String>(lines.size());
@@ -83,21 +85,39 @@ public final class TooltipHook {
     return warner;
   }
 
-  // Einmalige Chat-Warnung, nur wenn in den Einstellungen eingeschaltet
-  private static void sendChatWarnings(List<Finding> findings) {
-    ChatWarner warner = chatWarner;
+  // Beim ersten Hovern über ein gefälschtes Item: Chat-Warnung und/oder Warnton
+  private static void notifyFirstHover(List<Finding> findings) {
+    FirstSeen seen = firstSeen;
     ChatOutput output = chat;
-    if (warner == null || output == null || findings.isEmpty()) {
+    Runnable sound = warningSound;
+    boolean chatOn = chatWarning && output != null;
+    if (findings.isEmpty() || seen == null || (!chatOn && sound == null)) {
       return;
     }
-    for (String message : warner.newMessages(findings)) {
-      output.send(message);
+    List<Finding> fresh = seen.newFindings(findings);
+    if (fresh.isEmpty()) {
+      return;
+    }
+    if (chatOn) {
+      for (Finding finding : fresh) {
+        output.send(finding.chatText);
+      }
+    }
+    if (sound != null) {
+      // Nur ein Ton, auch wenn ein Item zwei Auffälligkeiten hat
+      sound.run();
     }
   }
 
-  /** @param warner einmalige Chat-Warnung oder {@code null}, wenn ausgeschaltet */
-  public static void setChatWarner(ChatWarner warner) {
-    chatWarner = warner;
+  /**
+   * @param seen        merkt sich bereits gemeldete Items
+   * @param chatOn      einmalige Chat-Warnung eingeschaltet
+   * @param soundPlayer spielt den Warnton oder {@code null}, wenn ausgeschaltet
+   */
+  public static void configureFirstHover(FirstSeen seen, boolean chatOn, Runnable soundPlayer) {
+    firstSeen = seen;
+    chatWarning = chatOn;
+    warningSound = soundPlayer;
   }
 
   public static void setChat(ChatOutput output) {

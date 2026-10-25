@@ -43,6 +43,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   private static final String KEY_ICED_OUT = "icedOutCheck";
   private static final String KEY_SLOT_FRAME = "slotFrame";
   private static final String KEY_CHAT_WARNING = "chatWarning";
+  private static final String KEY_WARNING_SOUND = "warningSound";
   private static final String KEY_REMINDER_ENABLED = "reminderEnabled";
   private static final String KEY_REMINDER_KEY = "reminderKey";
   private static final String KEY_REMINDER_LEAD = "reminderLeadMinutes";
@@ -50,14 +51,22 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   private static final String KEY_HIGHLIGHT_REMINDER = "highlightReminder";
   private static final String KEY_HIGHLIGHT_BID = "highlightBid";
 
-  // Notenblock-Ton von 1.8.9 (ab 1.9 heißt er anders)
+  // Sound-Namen von 1.8.9 (ab 1.9 heißen sie anders)
   private static final String REMINDER_SOUND = "note.pling";
+  // Dorfbewohner-"Nein": klingt nach Ablehnung und ist im Spiel gut wiederzuerkennen
+  private static final String WARNING_SOUND = "mob.villager.no";
   private static final long DUE_CHECK_MILLIS = 1000;
 
   private final AddonSettings settings = new AddonSettings();
   private final ReminderService reminders = new ReminderService();
   // Bleibt über Einstellungsänderungen erhalten, damit nicht erneut gewarnt wird
-  private final ChatWarner chatWarner = new ChatWarner();
+  private final FirstSeen firstSeen = new FirstSeen();
+  private final Runnable warningSoundPlayer = new Runnable() {
+    @Override
+    public void run() {
+      playSound(WARNING_SOUND);
+    }
+  };
 
   /** Merkt sich, ob der Eingriffs-Status in dieser Sitzung schon geprüft wurde. */
   private boolean statusChecked;
@@ -136,20 +145,20 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     for (String text : this.reminders.pollDue(now)) {
       getApi().displayMessageInChat(PREFIX + YELLOW + text);
       LabyMod.getInstance().notifyMessageRaw("Auktions-Erinnerung", text);
-      this.playReminderSound();
+      this.playSound(REMINDER_SOUND);
     }
   }
 
   // LabyMods playSound erwartet eine ResourceLocation, deren Klassenname im Spiel verschleiert
   // ist; deshalb per Reflexion über die Parametertypen statt über den Namen
-  private void playReminderSound() {
+  private void playSound(String name) {
     try {
       Object minecraft = LabyModCore.getMinecraft();
       for (Method method : minecraft.getClass().getMethods()) {
         Class<?>[] parameters = method.getParameterTypes();
         if (method.getName().equals("playSound") && parameters.length == 2
             && parameters[1] == float.class) {
-          Object sound = parameters[0].getConstructor(String.class).newInstance(REMINDER_SOUND);
+          Object sound = parameters[0].getConstructor(String.class).newInstance(name);
           method.invoke(minecraft, sound, 1F);
           return;
         }
@@ -158,7 +167,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     } catch (Throwable throwable) {
       if (!this.soundErrorLogged) {
         this.soundErrorLogged = true;
-        System.err.println("[AH-Fake-Warner] Erinnerungston konnte nicht abgespielt werden");
+        System.err.println("[AH-Fake-Warner] Ton " + name + " konnte nicht abgespielt werden");
         throwable.printStackTrace();
       }
     }
@@ -174,6 +183,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     this.settings.icedOutCheck = readBoolean(config, KEY_ICED_OUT, true);
     this.settings.slotFrame = readBoolean(config, KEY_SLOT_FRAME, true);
     this.settings.chatWarning = readBoolean(config, KEY_CHAT_WARNING, false);
+    this.settings.warningSound = readBoolean(config, KEY_WARNING_SOUND, true);
     this.settings.reminderEnabled = readBoolean(config, KEY_REMINDER_ENABLED, true);
     this.settings.reminderKey = readInt(config, KEY_REMINDER_KEY,
         AddonSettings.DEFAULT_REMINDER_KEY);
@@ -259,6 +269,18 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     chatWarning.bindDescription("Schreibt beim ersten Hovern über ein gefälschtes Item eine"
         + " Warnung in den Chat (nur für dich sichtbar).");
     list.add(chatWarning);
+
+    BooleanElement warningSound = new BooleanElement("Warnton beim ersten Hovern",
+        new IconData(Material.REDSTONE_TORCH_ON), new Consumer<Boolean>() {
+          @Override
+          public void accept(Boolean value) {
+            settings.warningSound = value;
+            save(KEY_WARNING_SOUND, value);
+          }
+        }, this.settings.warningSound);
+    warningSound.bindDescription("Spielt einmal pro gefälschtem Item einen Ton, wenn du zum"
+        + " ersten Mal darüber hoverst.");
+    list.add(warningSound);
 
     this.fillReminderSettings(list);
     this.fillHighlightSettings(list);
@@ -357,8 +379,9 @@ public class AhFakeWarnerAddon extends LabyModAddon {
 
   private void applySettings() {
     TooltipHook.setWarner(this.settings.createWarner());
-    TooltipHook.setChatWarner(
-        this.settings.enabled && this.settings.chatWarning ? this.chatWarner : null);
+    TooltipHook.configureFirstHover(this.firstSeen,
+        this.settings.enabled && this.settings.chatWarning,
+        this.settings.enabled && this.settings.warningSound ? this.warningSoundPlayer : null);
     SlotHook.configure(this.settings.enabled && this.settings.slotFrame,
         this.settings.enabled && this.settings.highlightReminder,
         this.settings.enabled && this.settings.highlightBid);
