@@ -1,6 +1,7 @@
 package de.bjarne.ahfakewarner;
 
 import de.bjarne.ahfakewarner.extract.SignatureExtractor;
+import de.bjarne.ahfakewarner.hook.SlotHook;
 import de.bjarne.ahfakewarner.hook.TooltipHook;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +31,8 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     TooltipHook.setWarner(new TooltipWarner(DEFAULT_WHITELIST, DEFAULT_THRESHOLD,
         SignatureExtractor.DEFAULT_PATTERN, true));
     System.out.println("[AH-Fake-Warner] Addon geladen, Tooltip-Eingriff "
-        + (TooltipHook.isInstalled() ? "aktiv" : "fehlt"));
+        + (TooltipHook.isInstalled() ? "aktiv" : "fehlt") + ", Slot-Eingriff "
+        + (SlotHook.isInstalled() ? "aktiv" : "fehlt"));
 
     // Es gibt kein Tick- oder Welt-betreten-Event; das Overlay wird aber nur
     // im Spiel gezeichnet. Beim ersten Mal im Spiel einmalig den Status zeigen.
@@ -41,9 +43,13 @@ public class AhFakeWarnerAddon extends LabyModAddon {
           return;
         }
         statusShown = true;
-        getApi().displayMessageInChat(TooltipHook.isInstalled()
-            ? PREFIX + "Tooltip-Warnung aktiv."
-            : PREFIX + "§cTooltip-Warnung konnte nicht eingebaut werden.");
+        if (TooltipHook.isInstalled() && SlotHook.isInstalled()) {
+          getApi().displayMessageInChat(PREFIX + "Tooltip-Warnung und Slot-Rahmen aktiv.");
+        } else {
+          getApi().displayMessageInChat(PREFIX + "§cNicht alles konnte eingebaut werden"
+              + " (Tooltip: " + (TooltipHook.isInstalled() ? "ja" : "nein")
+              + ", Rahmen: " + (SlotHook.isInstalled() ? "ja" : "nein") + ").");
+        }
       }
     });
   }

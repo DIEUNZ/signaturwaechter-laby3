@@ -14,8 +14,20 @@ public final class TooltipHook {
   private static volatile TooltipWarner warner;
   private static volatile boolean installed;
   private static boolean errorLogged;
+  // Verhindert, dass die Slot-Prüfung über ihren eigenen Tooltip-Aufruf Warnzeilen anhängt
+  private static boolean computingLines;
 
   private TooltipHook() {
+  }
+
+  /** Tooltip-Zeilen eines Items ohne die Warnzeilen dieses Addons. */
+  public static List<String> linesWithoutWarnings(ItemSource source) {
+    computingLines = true;
+    try {
+      return source.ahfw$lines();
+    } finally {
+      computingLines = false;
+    }
   }
 
   /**
@@ -24,7 +36,7 @@ public final class TooltipHook {
    */
   public static void onTooltip(List<String> lines, Map<?, ?> enchantments) {
     TooltipWarner current = warner;
-    if (current == null || lines == null || lines.isEmpty()) {
+    if (current == null || computingLines || lines == null || lines.isEmpty()) {
       return;
     }
     try {
@@ -40,6 +52,10 @@ public final class TooltipHook {
 
   public static void setWarner(TooltipWarner newWarner) {
     warner = newWarner;
+  }
+
+  public static TooltipWarner warner() {
+    return warner;
   }
 
   /** Vom Transformer gesetzt, sobald der Eingriff in {@code ItemStack} geklappt hat. */

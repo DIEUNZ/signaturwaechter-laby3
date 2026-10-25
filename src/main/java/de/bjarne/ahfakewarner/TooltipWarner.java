@@ -61,4 +61,9 @@ public final class TooltipWarner {
     }
     return warnings;
   }
+
+  /** Ob das Item auffällt (für den roten Slot-Rahmen). */
+  public boolean isWarning(List<String> lines, boolean hasEnchantments) {
+    return !this.warningsFor(lines, hasEnchantments).isEmpty();
+  }
 }
