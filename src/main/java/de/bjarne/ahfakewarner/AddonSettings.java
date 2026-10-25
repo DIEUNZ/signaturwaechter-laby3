@@ -20,6 +20,20 @@ public final class AddonSettings {
   public boolean icedOutCheck = true;
   public boolean slotFrame = true;
 
+  // Auktions-Erinnerung
+  /** LWJGL-Tastencode von R. */
+  public static final int DEFAULT_REMINDER_KEY = 19;
+  public static final int MAX_LEAD_MINUTES = 30;
+
+  public boolean reminderEnabled = true;
+  public int reminderKey = DEFAULT_REMINDER_KEY;
+  public int reminderLeadMinutes = 2;
+  public boolean reminderHint = true;
+
+  public static int clampLeadMinutes(int value) {
+    return Math.max(0, Math.min(MAX_LEAD_MINUTES, value));
+  }
+
   /** Whitelist-Namen, getrennt durch Komma, Semikolon oder Leerzeichen. */
   public List<String> whitelistNames() {
     List<String> names = new ArrayList<String>();

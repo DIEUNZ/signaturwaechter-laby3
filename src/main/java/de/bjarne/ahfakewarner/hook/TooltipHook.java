@@ -1,6 +1,9 @@
 package de.bjarne.ahfakewarner.hook;
 
 import de.bjarne.ahfakewarner.TooltipWarner;
+import de.bjarne.ahfakewarner.extract.SignatureExtractor;
+import de.bjarne.ahfakewarner.reminder.ReminderService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +15,7 @@ import java.util.Map;
 public final class TooltipHook {
 
   private static volatile TooltipWarner warner;
+  private static volatile ReminderService reminders;
   private static volatile boolean installed;
   private static boolean errorLogged;
   // Verhindert, dass die Slot-Prüfung über ihren eigenen Tooltip-Aufruf Warnzeilen anhängt
@@ -35,12 +39,27 @@ public final class TooltipHook {
    * @param enchantments Verzauberungen des Items (ID → Stufe) aus {@code EnchantmentHelper}
    */
   public static void onTooltip(List<String> lines, Map<?, ?> enchantments) {
-    TooltipWarner current = warner;
-    if (current == null || computingLines || lines == null || lines.isEmpty()) {
+    TooltipWarner currentWarner = warner;
+    ReminderService currentReminders = reminders;
+    if ((currentWarner == null && currentReminders == null) || computingLines || lines == null
+        || lines.isEmpty()) {
       return;
     }
     try {
-      lines.addAll(current.warningsFor(lines, enchantments != null && !enchantments.isEmpty()));
+      // Erst alles berechnen, dann anhängen, damit die Prüfungen den Original-Tooltip sehen
+      List<String> added = new ArrayList<String>(4);
+      if (currentWarner != null) {
+        added.addAll(currentWarner.warningsFor(lines,
+            enchantments != null && !enchantments.isEmpty()));
+      }
+      if (currentReminders != null) {
+        List<String> plain = new ArrayList<String>(lines.size());
+        for (String line : lines) {
+          plain.add(SignatureExtractor.stripFormatting(line));
+        }
+        added.addAll(currentReminders.onTooltip(plain, System.currentTimeMillis()));
+      }
+      lines.addAll(added);
     } catch (Throwable throwable) {
       if (!errorLogged) {
         errorLogged = true;
@@ -56,6 +75,11 @@ public final class TooltipHook {
 
   public static TooltipWarner warner() {
     return warner;
+  }
+
+  /** Auktions-Erinnerung: merkt sich das gehoverte Item und liefert die Hinweiszeile. */
+  public static void setReminders(ReminderService service) {
+    reminders = service;
   }
 
   /** Vom Transformer gesetzt, sobald der Eingriff in {@code ItemStack} geklappt hat. */

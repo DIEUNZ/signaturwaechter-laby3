@@ -1,5 +1,6 @@
 package de.bjarne.ahfakewarner.asm;
 
+import de.bjarne.ahfakewarner.hook.KeyHook;
 import de.bjarne.ahfakewarner.hook.SlotHook;
 import de.bjarne.ahfakewarner.hook.TooltipHook;
 import net.minecraft.launchwrapper.IClassTransformer;
@@ -22,6 +23,7 @@ import org.objectweb.asm.tree.VarInsnNode;
  *   <li>{@code ItemStack.getTooltip}: Warnzeilen anhängen ({@link TooltipHook})</li>
  *   <li>{@code ItemStack}: Zugriff auf Tooltip und Verzauberungen für das Addon</li>
  *   <li>{@code GuiContainer.drawSlot}: roter Rahmen um gefälschte Items ({@link SlotHook})</li>
+ *   <li>{@code GuiContainer.keyTyped}: Timer-Taste der Auktions-Erinnerung ({@link KeyHook})</li>
  * </ul>
  *
  * LabyMod 3 lässt Addon-Transformer vor der Forge-Deobfuskierung laufen, daher kommen
@@ -52,6 +54,9 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
   private static final String GUI_CONTAINER = "ayl";
   private static final String DRAW_SLOT = "a";
   private static final String DRAW_SLOT_DESC = "(Lyg;)V";
+  // GuiContainer.keyTyped(char typedChar, int keyCode), SRG func_73869_a
+  private static final String KEY_TYPED = "a";
+  private static final String KEY_TYPED_DESC = "(CI)V";
   // net.minecraft.inventory.Slot: getStack() (func_75211_c), xDisplayPosition, yDisplayPosition
   private static final String SLOT = "yg";
   private static final String SLOT_GET_STACK = "d";
@@ -60,6 +65,7 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
 
   private static final String TOOLTIP_HOOK = "de/bjarne/ahfakewarner/hook/TooltipHook";
   private static final String SLOT_HOOK = "de/bjarne/ahfakewarner/hook/SlotHook";
+  private static final String KEY_HOOK = "de/bjarne/ahfakewarner/hook/KeyHook";
   private static final String ITEM_SOURCE = "de/bjarne/ahfakewarner/hook/ItemSource";
 
   @Override
@@ -81,18 +87,30 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
       ClassNode node = new ClassNode();
       new ClassReader(bytes).accept(node, 0);
 
-      boolean ok = itemStack ? patchItemStack(node) : patchGuiContainer(node);
-      if (!ok) {
+      boolean tooltip = false;
+      boolean slot = false;
+      boolean key = false;
+      if (itemStack) {
+        tooltip = patchItemStack(node);
+      } else {
+        slot = patchDrawSlot(node);
+        key = patchKeyTyped(node);
+      }
+      if (!tooltip && !slot && !key) {
         System.err.println("[AH-Fake-Warner] Methode in " + name + " nicht gefunden, Eingriff fehlt");
         return bytes;
       }
 
       ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS);
       node.accept(writer);
-      if (itemStack) {
+      if (tooltip) {
         TooltipHook.markInstalled();
-      } else {
+      }
+      if (slot) {
         SlotHook.markInstalled();
+      }
+      if (key) {
+        KeyHook.markInstalled();
       }
       System.out.println("[AH-Fake-Warner] Eingriff in " + name + " eingebaut");
       return writer.toByteArray();
@@ -170,8 +188,23 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
     return method;
   }
 
+  // Ganz am Anfang von keyTyped: KeyHook.onContainerKey(keyCode); Minecraft macht danach normal weiter
+  private static boolean patchKeyTyped(ClassNode node) {
+    for (MethodNode method : node.methods) {
+      if (KEY_TYPED.equals(method.name) && KEY_TYPED_DESC.equals(method.desc)) {
+        InsnList hook = new InsnList();
+        hook.add(new VarInsnNode(Opcodes.ILOAD, 2));
+        hook.add(new MethodInsnNode(Opcodes.INVOKESTATIC, KEY_HOOK, "onContainerKey", "(I)V",
+            false));
+        method.instructions.insert(hook);
+        return true;
+      }
+    }
+    return false;
+  }
+
   // Vor jedem "return" von drawSlot: SlotHook.afterDrawSlot(slot.getStack(), slot.x, slot.y)
-  private static boolean patchGuiContainer(ClassNode node) {
+  private static boolean patchDrawSlot(ClassNode node) {
     int patched = 0;
     for (MethodNode method : node.methods) {
       if (!DRAW_SLOT.equals(method.name) || !DRAW_SLOT_DESC.equals(method.desc)) {
