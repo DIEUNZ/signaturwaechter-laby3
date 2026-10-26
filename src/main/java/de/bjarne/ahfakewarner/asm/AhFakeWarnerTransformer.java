@@ -49,6 +49,12 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
   private static final String GET_MINECRAFT = "A";
   private static final String THE_PLAYER = "h";
   private static final String THE_PLAYER_DESC = "Lbew;";
+  // ItemStack.getItem() (func_77973_b), Item.getIdFromItem(Item) (func_150891_b),
+  // ItemStack.getItemDamage() (func_77952_i)
+  private static final String ITEM = "zw";
+  private static final String GET_ITEM = "b";
+  private static final String GET_ID_FROM_ITEM = "b";
+  private static final String GET_ITEM_DAMAGE = "h";
 
   // net.minecraft.client.gui.inventory.GuiContainer.drawSlot(Slot), SRG func_146977_a
   private static final String GUI_CONTAINER = "ayl";
@@ -135,10 +141,12 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
     node.interfaces.add(ITEM_SOURCE);
     node.methods.add(linesMethod());
     node.methods.add(enchantmentsMethod());
+    node.methods.add(itemIdMethod());
+    node.methods.add(damageMethod());
     return true;
   }
 
-  // Vor jedem "areturn": Liste duplizieren, Verzauberungen holen, Hook aufrufen
+  // Vor jedem "areturn": Liste duplizieren, Verzauberungen holen, Hook mit dem Item aufrufen
   private static int patchTooltipReturns(MethodNode method) {
     int count = 0;
     for (AbstractInsnNode insn : method.instructions.toArray()) {
@@ -150,8 +158,9 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
       hook.add(new VarInsnNode(Opcodes.ALOAD, 0));
       hook.add(new MethodInsnNode(Opcodes.INVOKESTATIC, ENCHANTMENT_HELPER, GET_ENCHANTMENTS,
           GET_ENCHANTMENTS_DESC, false));
+      hook.add(new VarInsnNode(Opcodes.ALOAD, 0));
       hook.add(new MethodInsnNode(Opcodes.INVOKESTATIC, TOOLTIP_HOOK, "onTooltip",
-          "(Ljava/util/List;Ljava/util/Map;)V", false));
+          "(Ljava/util/List;Ljava/util/Map;Ljava/lang/Object;)V", false));
       method.instructions.insertBefore(insn, hook);
       count++;
     }
@@ -185,6 +194,30 @@ public class AhFakeWarnerTransformer implements IClassTransformer {
     code.add(new MethodInsnNode(Opcodes.INVOKESTATIC, ENCHANTMENT_HELPER, GET_ENCHANTMENTS,
         GET_ENCHANTMENTS_DESC, false));
     code.add(new InsnNode(Opcodes.ARETURN));
+    return method;
+  }
+
+  // public int ahfw$itemId() { return Item.getIdFromItem(this.getItem()); }
+  private static MethodNode itemIdMethod() {
+    MethodNode method = new MethodNode(Opcodes.ACC_PUBLIC, "ahfw$itemId", "()I", null, null);
+    InsnList code = method.instructions;
+    code.add(new VarInsnNode(Opcodes.ALOAD, 0));
+    code.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, ITEM_STACK, GET_ITEM, "()L" + ITEM + ";",
+        false));
+    code.add(new MethodInsnNode(Opcodes.INVOKESTATIC, ITEM, GET_ID_FROM_ITEM,
+        "(L" + ITEM + ";)I", false));
+    code.add(new InsnNode(Opcodes.IRETURN));
+    return method;
+  }
+
+  // public int ahfw$damage() { return this.getItemDamage(); }
+  private static MethodNode damageMethod() {
+    MethodNode method = new MethodNode(Opcodes.ACC_PUBLIC, "ahfw$damage", "()I", null, null);
+    InsnList code = method.instructions;
+    code.add(new VarInsnNode(Opcodes.ALOAD, 0));
+    code.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, ITEM_STACK, GET_ITEM_DAMAGE, "()I",
+        false));
+    code.add(new InsnNode(Opcodes.IRETURN));
     return method;
   }
 

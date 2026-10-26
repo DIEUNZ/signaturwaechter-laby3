@@ -52,6 +52,10 @@ public final class Texts {
     put("warning.chatIcedOut", "%s: Iced Out ohne Verzauberung, vermutlich gefälscht",
         "%s: Iced Out without enchantment, probably fake");
     put("warning.chat", "%s: signiert von %s", "%s: signed by %s");
+    put("warning.spawnEgg", "ACHTUNG - das Ei enthält ein anderes Mob (%s)",
+        "WARNING - this egg contains a different mob (%s)");
+    put("warning.chatSpawnEgg", "%s: Das Ei enthält ein anderes Mob (%s)",
+        "%s: This egg contains a different mob (%s)");
 
     put("hint.set", "Erinnerung gesetzt für %s - [%s] zum Entfernen",
         "Reminder set for %s - [%s] to remove");

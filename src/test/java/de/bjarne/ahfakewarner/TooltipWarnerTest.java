@@ -51,4 +51,26 @@ class TooltipWarnerTest {
         Collections.singletonList("AbgegrieftHD"), 2, SignatureExtractor.DEFAULT_PATTERN, false);
     assertTrue(off.warningsFor(Arrays.asList("*Iced Out* Schaf"), false).isEmpty());
   }
+
+  @Test
+  void falschBenanntesSpawnEiOrange() {
+    // Ghast-Ei (1.8.9: Schadenswert 56), das "Erschaffe skelett" heißt; Name mit F3+H-ID
+    List<String> lines = Arrays.asList("§fErschaffe skelett (#0383/56)");
+    List<TooltipWarner.Finding> findings = this.warner.findings(lines, false, "ghast");
+    assertEquals(1, findings.size());
+    assertEquals(false, findings.get(0).fake);
+    assertEquals("Erschaffe skelett: Das Ei enthält ein anderes Mob (ghast)",
+        findings.get(0).chatText);
+    assertEquals(Arrays.asList("", "§6! ACHTUNG - das Ei enthält ein anderes Mob (ghast)"),
+        TooltipWarner.tooltipLines(findings));
+  }
+
+  @Test
+  void passendesSpawnEiUndAbschaltbar() {
+    assertTrue(this.warner.findings(Arrays.asList("Erschaffe Ghast"), false, "ghast").isEmpty());
+    assertTrue(this.warner.findings(Arrays.asList("Erschaffe skelett"), false, null).isEmpty());
+    TooltipWarner off = new TooltipWarner(Collections.singletonList("AbgegrieftHD"), 2,
+        SignatureExtractor.DEFAULT_PATTERN, true, false);
+    assertTrue(off.findings(Arrays.asList("Erschaffe skelett"), false, "ghast").isEmpty());
+  }
 }

@@ -19,6 +19,7 @@ public final class AddonSettings {
   public String whitelist = DEFAULT_WHITELIST;
   public int threshold = DEFAULT_THRESHOLD;
   public boolean icedOutCheck = true;
+  public boolean spawnEggCheck = true;
   public boolean slotFrame = true;
   public boolean chatWarning = false;
   public boolean warningSound = true;
@@ -62,6 +63,6 @@ public final class AddonSettings {
       return null;
     }
     return new TooltipWarner(this.whitelistNames(), clampThreshold(this.threshold),
-        SignatureExtractor.DEFAULT_PATTERN, this.icedOutCheck);
+        SignatureExtractor.DEFAULT_PATTERN, this.icedOutCheck, this.spawnEggCheck);
   }
 }

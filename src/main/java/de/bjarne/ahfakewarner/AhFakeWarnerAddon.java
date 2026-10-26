@@ -45,6 +45,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
   private static final String KEY_WHITELIST = "whitelist";
   private static final String KEY_THRESHOLD = "threshold";
   private static final String KEY_ICED_OUT = "icedOutCheck";
+  private static final String KEY_SPAWN_EGG = "spawnEggCheck";
   private static final String KEY_SLOT_FRAME = "slotFrame";
   private static final String KEY_CHAT_WARNING = "chatWarning";
   private static final String KEY_WARNING_SOUND = "warningSound";
@@ -187,6 +188,7 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     this.settings.threshold = AddonSettings.clampThreshold(
         readInt(config, KEY_THRESHOLD, AddonSettings.DEFAULT_THRESHOLD));
     this.settings.icedOutCheck = readBoolean(config, KEY_ICED_OUT, true);
+    this.settings.spawnEggCheck = readBoolean(config, KEY_SPAWN_EGG, true);
     this.settings.slotFrame = readBoolean(config, KEY_SLOT_FRAME, true);
     this.settings.chatWarning = readBoolean(config, KEY_CHAT_WARNING, false);
     this.settings.warningSound = readBoolean(config, KEY_WARNING_SOUND, true);
@@ -278,6 +280,18 @@ public class AhFakeWarnerAddon extends LabyModAddon {
     icedOut.bindDescription("Warnt bei \"Iced Out\"-Items ohne Verzauberung, denn echte tragen"
         + " immer eine.");
     list.add(icedOut);
+
+    BooleanElement spawnEgg = new BooleanElement("Falsch benannte Spawn-Eier prüfen",
+        new IconData(Material.MONSTER_EGG), new Consumer<Boolean>() {
+          @Override
+          public void accept(Boolean value) {
+            settings.spawnEggCheck = value;
+            save(KEY_SPAWN_EGG, value);
+          }
+        }, this.settings.spawnEggCheck);
+    spawnEgg.bindDescription("Warnt, wenn der Name eines Spawn-Eis ein anderes Mob nennt als das"
+        + " Ei wirklich enthält.");
+    list.add(spawnEgg);
 
     list.add(new BooleanElement("Roter Rahmen um Slots", new IconData(Material.ITEM_FRAME),
         new Consumer<Boolean>() {

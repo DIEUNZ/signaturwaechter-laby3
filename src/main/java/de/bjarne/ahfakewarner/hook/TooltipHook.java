@@ -3,6 +3,7 @@ package de.bjarne.ahfakewarner.hook;
 import de.bjarne.ahfakewarner.FirstSeen;
 import de.bjarne.ahfakewarner.TooltipWarner;
 import de.bjarne.ahfakewarner.TooltipWarner.Finding;
+import de.bjarne.ahfakewarner.detect.SpawnEggDetector;
 import de.bjarne.ahfakewarner.extract.SignatureExtractor;
 import de.bjarne.ahfakewarner.reminder.ReminderService;
 import java.util.ArrayList;
@@ -27,7 +28,20 @@ public final class TooltipHook {
   // Verhindert, dass die Slot-Prüfung über ihren eigenen Tooltip-Aufruf Warnzeilen anhängt
   private static boolean computingLines;
 
+  // Numerische ID von minecraft:spawn_egg in 1.8.9; das Mob steckt im Schadenswert
+  private static final int SPAWN_EGG_ID = 383;
+
   private TooltipHook() {
+  }
+
+  /** Mob im Spawn-Ei (z. B. "ghast") oder {@code null}, wenn das Item keins ist. */
+  public static String eggMob(Object stack) {
+    if (!(stack instanceof ItemSource)) {
+      return null;
+    }
+    ItemSource source = (ItemSource) stack;
+    return source.ahfw$itemId() == SPAWN_EGG_ID
+        ? SpawnEggDetector.mobFromLegacyData(source.ahfw$damage()) : null;
   }
 
   /** Tooltip-Zeilen eines Items ohne die Warnzeilen dieses Addons. */
@@ -43,8 +57,9 @@ public final class TooltipHook {
   /**
    * @param lines        fertige Tooltip-Zeilen, werden hier ergänzt
    * @param enchantments Verzauberungen des Items (ID → Stufe) aus {@code EnchantmentHelper}
+   * @param stack        das Item selbst ({@code ItemStack}, implementiert {@link ItemSource})
    */
-  public static void onTooltip(List<String> lines, Map<?, ?> enchantments) {
+  public static void onTooltip(List<String> lines, Map<?, ?> enchantments, Object stack) {
     TooltipWarner currentWarner = warner;
     ReminderService currentReminders = reminders;
     if ((currentWarner == null && currentReminders == null) || computingLines || lines == null
@@ -56,7 +71,7 @@ public final class TooltipHook {
       List<String> added = new ArrayList<String>(4);
       if (currentWarner != null) {
         List<Finding> findings = currentWarner.findings(lines,
-            enchantments != null && !enchantments.isEmpty());
+            enchantments != null && !enchantments.isEmpty(), eggMob(stack));
         added.addAll(TooltipWarner.tooltipLines(findings));
         notifyFirstHover(findings);
       }

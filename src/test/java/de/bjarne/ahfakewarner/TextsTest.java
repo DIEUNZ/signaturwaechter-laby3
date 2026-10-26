@@ -54,7 +54,8 @@ class TextsTest {
   @Test
   void jederSchluesselGibtEsInBeidenSprachen() {
     for (String key : Arrays.asList("disabled", "notInstalled", "warning.fake", "warning.suspect",
-        "warning.icedOut", "warning.chatIcedOut", "warning.chat", "hint.set", "hint.endingSoon",
+        "warning.icedOut", "warning.chatIcedOut", "warning.chat", "warning.spawnEgg",
+        "warning.chatSpawnEgg", "hint.set", "hint.endingSoon",
         "hint.offerAtEnd", "hint.offer", "reminder.title", "reminder.noTime", "reminder.removed",
         "reminder.set", "reminder.due", "reminder.dueWithBid", "reminder.cleared",
         "reminder.none", "reminder.entry", "reminder.usage")) {

@@ -14,4 +14,10 @@ public interface ItemSource {
 
   /** Verzauberungen (ID → Stufe) aus {@code EnchantmentHelper.getEnchantments}. */
   Map<?, ?> ahfw$enchantments();
+
+  /** Numerische Item-ID ({@code Item.getIdFromItem}), z. B. 383 für Spawn-Eier in 1.8.9. */
+  int ahfw$itemId();
+
+  /** Schadenswert ({@code getItemDamage}); bei Spawn-Eiern in 1.8.9 die Entity-ID. */
+  int ahfw$damage();
 }

@@ -35,7 +35,7 @@ class SlotAnalysisTest {
 
   @Test
   void gebotslimitZaehltAlsEigenesGebot() {
-    SlotAnalysis analysis = SlotAnalysis.of(OUTBID, false, WARNER, "Spieler", NOW);
+    SlotAnalysis analysis = SlotAnalysis.of(OUTBID, false, null, WARNER, "Spieler", NOW);
     assertTrue(analysis.ownBid());
     assertFalse(analysis.isWarning());
     assertEquals(NOW + 104 * 60_000L, analysis.endsAtEstimate());
@@ -45,12 +45,12 @@ class SlotAnalysisTest {
   void ohneGebotKeineMarkierung() {
     List<String> lines = Arrays.asList("Kopf", "Aktuelles Gebot:", "5$", "Verbleibende Zeit:",
         "3 Minuten");
-    assertFalse(SlotAnalysis.of(lines, false, WARNER, "Spieler", NOW).ownBid());
+    assertFalse(SlotAnalysis.of(lines, false, null, WARNER, "Spieler", NOW).ownBid());
   }
 
   @Test
   void keineAuktionKeinSchluessel() {
-    SlotAnalysis analysis = SlotAnalysis.of(Arrays.asList("Stein"), false, WARNER, null, NOW);
+    SlotAnalysis analysis = SlotAnalysis.of(Arrays.asList("Stein"), false, null, WARNER, null, NOW);
     assertNull(analysis.auctionKey());
     assertEquals(-1, analysis.endsAtEstimate());
   }
@@ -58,8 +58,8 @@ class SlotAnalysisTest {
   @Test
   void fakeOhneWarnerNichtRot() {
     List<String> lines = Arrays.asList("Perk", "Signiert von AbgegriefHD am 01.06.2026");
-    assertTrue(SlotAnalysis.of(lines, false, WARNER, null, NOW).isWarning());
-    assertFalse(SlotAnalysis.of(lines, false, null, null, NOW).isWarning());
+    assertTrue(SlotAnalysis.of(lines, false, null, WARNER, null, NOW).isWarning());
+    assertFalse(SlotAnalysis.of(lines, false, null, null, null, NOW).isWarning());
   }
 
   @Test
@@ -74,7 +74,7 @@ class SlotAnalysisTest {
     // Slot-Analyse ein paar Sekunden später mit Farbcodes
     SlotAnalysis analysis = SlotAnalysis.of(Arrays.asList("§fApple (#0260)",
         "§7Aktuelles Gebot:", "§63$", "§7Verbleibende Zeit:", "§a104 Minuten"),
-        false, WARNER, null, NOW + 3000);
+        false, null, WARNER, null, NOW + 3000);
     assertTrue(reminders.hasReminder(analysis.auctionKey(), analysis.endsAtEstimate()));
 
     reminders.configure(false, 19, "R", 2, true);
@@ -93,7 +93,21 @@ class SlotAnalysisTest {
 
     SlotAnalysis analysis = SlotAnalysis.of(Arrays.asList("§cJhins Geburtstagsböller",
         "§7Aktuelles Gebot:", "§657.000.000$", "§7Verbleibende Zeit:", "§a12 Minuten"),
-        false, WARNER, null, NOW + 2000);
+        false, null, WARNER, null, NOW + 2000);
     assertTrue(reminders.hasReminder(analysis.auctionKey(), analysis.endsAtEstimate()));
+  }
+
+  @Test
+  void spawnEiOrangeAberRotHatVorrang() {
+    SlotAnalysis egg = SlotAnalysis.of(Arrays.asList("Erschaffe skelett"), false, "ghast",
+        WARNER, null, NOW);
+    assertTrue(egg.isWarning());
+    assertFalse(egg.isFake());
+
+    // Iced Out ohne Verzauberung und falsches Mob: rot
+    SlotAnalysis both = SlotAnalysis.of(Arrays.asList("*Iced Out* Schaf"), false, "ghast",
+        WARNER, null, NOW);
+    assertTrue(both.isWarning());
+    assertTrue(both.isFake());
   }
 }

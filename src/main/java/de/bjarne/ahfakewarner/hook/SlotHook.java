@@ -9,8 +9,8 @@ import org.lwjgl.opengl.GL11;
 
 /**
  * Wird aus {@code GuiContainer.drawSlot} aufgerufen: am Anfang färbt es Auktions-Slots hinter
- * dem Item ein (Timer gesetzt / eigenes Gebot), am Ende zeichnet es einen roten Rahmen um
- * Slots mit gefälschtem Item. Läuft nur im Render-Thread.
+ * dem Item ein (Timer gesetzt / eigenes Gebot), am Ende zeichnet es einen Rahmen um Slots mit
+ * gefälschtem Item (rot) bzw. falsch benanntem Spawn-Ei (orange). Läuft nur im Render-Thread.
  */
 public final class SlotHook {
 
@@ -19,6 +19,9 @@ public final class SlotHook {
   // Farben wie im LabyMod-4-Addon (RGBA)
   private static final int[] REMINDER_COLOR = {30, 120, 255, 180};
   private static final int[] BID_COLOR = {40, 200, 60, 150};
+  // Rahmen: rot (Fälschung, 1 Pixel) bzw. orange (falsch benanntes Spawn-Ei, 2 Pixel)
+  private static final int[] FAKE_FRAME = {255, 32, 32, 255};
+  private static final int[] EGG_FRAME = {255, 144, 16, 255};
   // Kurzer Cache, damit nicht jeder Frame den Tooltip neu baut; läuft ab, weil
   // GG die Lore offener Auktionen laufend ändert
   private static final long CACHE_MILLIS = 5000;
@@ -77,8 +80,12 @@ public final class SlotHook {
       return;
     }
     try {
-      if (analyze((ItemSource) stack).isWarning()) {
-        drawFrame(x, y);
+      SlotAnalysis analysis = analyze((ItemSource) stack);
+      if (analysis.isFake()) {
+        // Rot hat Vorrang vor Orange
+        drawFrame(x, y, FAKE_FRAME, 1);
+      } else if (analysis.isWarning()) {
+        drawFrame(x, y, EGG_FRAME, 2);
       }
     } catch (Throwable throwable) {
       logOnce(throwable);
@@ -94,7 +101,8 @@ public final class SlotHook {
     }
 
     SlotAnalysis analysis = SlotAnalysis.of(TooltipHook.linesWithoutWarnings(source),
-        !source.ahfw$enchantments().isEmpty(), warner, playerName, now);
+        !source.ahfw$enchantments().isEmpty(), TooltipHook.eggMob(source), warner, playerName,
+        now);
     CACHE.put(source, new Entry(warner, analysis, now));
     return analysis;
   }
@@ -129,15 +137,15 @@ public final class SlotHook {
     GL11.glPopAttrib();
   }
 
-  // 1 Pixel breiter Rahmen innerhalb des 16x16-Slots
-  private static void drawFrame(int x, int y) {
+  // Rahmen innerhalb des 16x16-Slots in der angegebenen Breite
+  private static void drawFrame(int x, int y, int[] rgba, int width) {
     begin(false);
     try {
-      GL11.glColor4f(1F, 0.125F, 0.125F, 1F);
-      quad(x, y, x + SLOT_SIZE, y + 1);
-      quad(x, y + SLOT_SIZE - 1, x + SLOT_SIZE, y + SLOT_SIZE);
-      quad(x, y + 1, x + 1, y + SLOT_SIZE - 1);
-      quad(x + SLOT_SIZE - 1, y + 1, x + SLOT_SIZE, y + SLOT_SIZE - 1);
+      color(rgba);
+      quad(x, y, x + SLOT_SIZE, y + width);
+      quad(x, y + SLOT_SIZE - width, x + SLOT_SIZE, y + SLOT_SIZE);
+      quad(x, y + width, x + width, y + SLOT_SIZE - width);
+      quad(x + SLOT_SIZE - width, y + width, x + SLOT_SIZE, y + SLOT_SIZE - width);
     } finally {
       end();
     }
